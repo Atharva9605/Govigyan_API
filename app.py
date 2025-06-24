@@ -7,7 +7,7 @@ import re
 from PIL import Image
 import google.generativeai as genai
 from dotenv import load_dotenv
-import fitz  # PyMuPDF
+import fitz
 from io import BytesIO
 from flask import Flask, request, jsonify
 from werkzeug.utils import secure_filename
