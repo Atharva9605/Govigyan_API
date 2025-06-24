@@ -19,17 +19,17 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes (restrict in production if needed)
+CORS(app)
 
-load_dotenv()  # Load environment variables
+load_dotenv()
 
-# --- Configuration (from environment variables) ---
+# --- Configuration ---
 DB_NAME = os.environ.get('DB_NAME')
 DB_USER = os.environ.get('DB_USER')
 DB_PASSWORD = os.environ.get('DB_PASSWORD')
 DB_HOST = os.environ.get('DB_HOST')
-DB_PORT = os.environ.get('DB_PORT', '5432')  # Default to 5432
-DB_TABLE = os.environ.get('DB_TABLE', 'StockBook')  # Default table name
+DB_PORT = os.environ.get('DB_PORT', '5432')
+DB_TABLE = os.environ.get('DB_TABLE', 'StockBook')
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
 
 # Validate environment variables
@@ -39,9 +39,14 @@ if missing_vars:
     logger.error(f"[CONFIG_ERROR] Missing environment variables: {', '.join(missing_vars)}")
     raise ValueError(f"Missing environment variables: {', '.join(missing_vars)}")
 
+# Validate table name
+if not re.match(r'^[a-zA-Z0-9_]+$', DB_TABLE):
+    logger.error(f"[CONFIG_ERROR] Invalid table name: {DB_TABLE}")
+    raise ValueError(f"Invalid table name: {DB_TABLE}")
+
 # Allowed file extensions
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'pdf'}
-UPLOAD_FOLDER = 'uploads'
+UPLOAD_FOLDER = 'Uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
@@ -68,9 +73,7 @@ def create_database_if_not_exists(dbname, user, password, host, port):
                     logger.info(f"[DB_SETUP] Database '{dbname}' already exists.")
         return True
     except psycopg2.Error as e:
-        logger.error(f"[DB_ERROR] Postgre++
-
-SQL Error during DB creation: {e}")
+        logger.error(f"[DB_ERROR] PostgreSQL Error during DB creation: {e}")
         logger.error(traceback.format_exc())
         return False
     except Exception as e:
@@ -313,7 +316,6 @@ def process_stock_book():
             logger.error("[API_ERROR] Failed to ensure database existence.")
             return jsonify({"error": "Failed to connect to or create database. Check configuration."}), 500
 
- Judiciously handle database insertions
         extracted_data = extract_json_from_images_with_gemini(all_image_paths, GEMINI_API_KEY)
         if extracted_data:
             if insert_data_into_postgres(extracted_data, DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_TABLE):
@@ -330,7 +332,6 @@ def process_stock_book():
             logger.warning("[API_WARNING] No data extracted from files.")
             return jsonify({"message": "No data extracted from the provided files."}), 200
     finally:
-        # Clean up all files
         for path in all_image_paths:
             if os.path.exists(path):
                 try:
